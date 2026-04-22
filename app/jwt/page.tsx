@@ -93,9 +93,9 @@ export default function JwtPage() {
             {expired !== null && (
               <div className={`rounded-xl px-4 py-3 text-sm font-medium ${expired ? 'bg-red-500/10 border border-red-500/30 text-red-400' : 'bg-green-500/10 border border-green-500/30 text-green-400'}`}>
                 {expired ? '⚠️ Token 已过期' : '✅ Token 未过期'}
-                {result.payload.exp && (
+                {result.payload.exp != null && (
                   <span className="ml-2 font-normal opacity-80">
-                    过期时间：{formatTime(result.payload.exp as number)}
+                    过期时间：{formatTime(Number(result.payload.exp))}
                   </span>
                 )}
               </div>
@@ -135,12 +135,12 @@ export default function JwtPage() {
               <div className="mt-4 space-y-1.5 border-t border-white/10 pt-4">
                 {(['iat', 'exp', 'nbf'] as const).map((field) => {
                   const val = result.payload[field]
-                  if (!val) return null
+                  if (val == null) return null
                   const labels: Record<string, string> = { iat: '签发时间', exp: '过期时间', nbf: '生效时间' }
                   return (
                     <div key={field} className="flex gap-3 text-sm">
                       <span className="text-gray-500 w-16 shrink-0">{labels[field]}</span>
-                      <span className="text-gray-300">{formatTime(val as number)}</span>
+                      <span className="text-gray-300">{formatTime(Number(val))}</span>
                     </div>
                   )
                 })}
