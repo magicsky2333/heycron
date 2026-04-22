@@ -2,6 +2,25 @@
 
 import { useState } from 'react'
 
+const PLATFORMS = [
+  { key: 'cron', label: 'Cron 表达式', color: 'text-yellow-400' },
+  { key: 'kubernetes', label: 'Kubernetes', color: 'text-blue-400' },
+  { key: 'github_actions', label: 'GitHub Actions', color: 'text-purple-400' },
+  { key: 'jenkins', label: 'Jenkins', color: 'text-orange-400' },
+  { key: 'airflow', label: 'Apache Airflow', color: 'text-green-400' },
+  { key: 'crontab', label: 'Linux crontab', color: 'text-cyan-400' },
+  { key: 'nodejs', label: 'Node.js', color: 'text-lime-400' },
+  { key: 'python', label: 'Python', color: 'text-pink-400' },
+]
+
+const EXAMPLES = [
+  '每天早上 9 点',
+  '每周一凌晨 2 点',
+  '每 5 分钟执行一次',
+  'Every weekday at 9am',
+  '每月 1 号零点',
+]
+
 const features = [
   {
     icon: '💬',
@@ -11,12 +30,12 @@ const features = [
   {
     icon: '🚀',
     title: '多平台一键导出',
-    desc: '自动生成 Kubernetes CronJob、GitHub Actions、Jenkins Pipeline、Airflow DAG、Linux crontab、Node.js、Python 配置代码。',
+    desc: '自动生成 Kubernetes CronJob、GitHub Actions、Jenkins Pipeline、Airflow、Linux crontab、Node.js、Python 配置代码。',
   },
   {
     icon: '🔍',
-    title: '可视化解析',
-    desc: '粘贴任意 Cron 表达式，立即看懂每个字段的含义，告别"0 9 * * 1 到底是什么"的困惑。',
+    title: '一次生成，全部复制',
+    desc: '每个平台的配置独立显示，一键复制，直接粘贴到你的项目中使用。',
   },
 ]
 
@@ -27,43 +46,70 @@ const faqs = [
   },
   {
     q: '支持哪些平台导出？',
-    a: '规划支持：Kubernetes CronJob、GitHub Actions、Jenkins Pipeline、Apache Airflow、Linux crontab、Node.js (node-cron)、Python (APScheduler)。',
+    a: '支持 Kubernetes CronJob、GitHub Actions、Jenkins Pipeline、Apache Airflow、Linux crontab、Node.js (node-cron)、Python (APScheduler)。',
   },
   {
-    q: '什么时候上线？免费吗？',
-    a: '目前正在开发中，加入候补名单可第一时间收到上线通知。核心功能将永久免费，高级功能考虑提供付费订阅。',
+    q: '免费吗？',
+    a: '完全免费使用，核心功能不会收费。',
   },
   {
     q: '为什么不直接用 ChatGPT？',
-    a: '你可以，但 Hey Cron 更专注：无需描述上下文、结果直接可复制、多平台格式一次生成、可视化校验表达式是否正确。',
+    a: '你可以，但 Hey Cron 更专注：无需描述上下文、所有平台格式一次生成、结果格式固定可直接复制使用。',
   },
 ]
 
-const platforms = [
-  'Kubernetes',
-  'GitHub Actions',
-  'Jenkins',
-  'Apache Airflow',
-  'Linux crontab',
-  'Node.js',
-  'Python',
-]
-
-const demoRows = [
-  { label: 'Cron 表达式', value: '0 9 * * 1', color: 'text-yellow-400' },
-  { label: 'Kubernetes', value: 'schedule: "0 9 * * 1"', color: 'text-blue-400' },
-  { label: 'GitHub Actions', value: "cron: '0 9 * * 1'", color: 'text-purple-400' },
-  { label: 'Linux crontab', value: '0 9 * * 1 /usr/bin/script.sh', color: 'text-cyan-400' },
-]
+type Result = {
+  cron: string
+  description: string
+  platforms: Record<string, string>
+}
 
 export default function Home() {
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [input, setInput] = useState('')
+  const [result, setResult] = useState<Result | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [copied, setCopied] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Waitlist
+  const [email, setEmail] = useState('')
+  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  const handleGenerate = async () => {
+    if (!input.trim()) return
+    setLoading(true)
+    setError('')
+    setResult(null)
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || '生成失败，请重试')
+      } else {
+        setResult(data)
+      }
+    } catch {
+      setError('网络异常，请重试')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(key)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) return
-    setStatus('loading')
+    setWaitlistStatus('loading')
     try {
       const res = await fetch('https://formspree.io/f/xbdqkkjg', {
         method: 'POST',
@@ -71,13 +117,13 @@ export default function Home() {
         body: JSON.stringify({ email }),
       })
       if (res.ok) {
-        setStatus('success')
+        setWaitlistStatus('success')
         setEmail('')
       } else {
-        setStatus('error')
+        setWaitlistStatus('error')
       }
     } catch {
-      setStatus('error')
+      setWaitlistStatus('error')
     }
   }
 
@@ -93,58 +139,96 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-24 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-8">
-          <span>🚧</span>
-          <span>正在开发中 · 加入候补名单优先体验</span>
-        </div>
-        <h1 className="text-5xl sm:text-6xl font-bold leading-tight mb-6 tracking-tight">
+      <section className="max-w-3xl mx-auto px-6 pt-16 pb-8 text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4 tracking-tight">
           用自然语言
-          <br />
           <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            生成 Cron 表达式
+            {' '}生成 Cron 表达式
           </span>
         </h1>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          告别死记硬背。输入一句话，即刻生成可用于 Kubernetes、GitHub Actions、Jenkins、Airflow
-          的配置代码。支持中英文。
+        <p className="text-lg text-gray-400 mb-8">
+          输入一句话，自动生成 Kubernetes、GitHub Actions、Jenkins 等多平台配置
         </p>
-        <a
-          href="#waitlist"
-          className="inline-block bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-colors px-8 py-3.5 rounded-lg font-semibold text-lg"
-        >
-          加入候补名单 →
-        </a>
       </section>
 
-      {/* Demo mockup */}
-      <section className="max-w-3xl mx-auto px-6 pb-20">
-        <div className="bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
-          <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/10">
-            <span className="w-3 h-3 rounded-full bg-red-500/60" />
-            <span className="w-3 h-3 rounded-full bg-yellow-500/60" />
-            <span className="w-3 h-3 rounded-full bg-green-500/60" />
+      {/* Generator */}
+      <section className="max-w-3xl mx-auto px-6 pb-16">
+        <div className="bg-gray-900 border border-white/10 rounded-xl p-6">
+          {/* Input */}
+          <div className="mb-4">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+              placeholder="描述你的调度需求，例如：每周一早上 9 点"
+              className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors text-base"
+            />
           </div>
-          <div className="p-6 font-mono text-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500 shrink-0">输入</span>
-              <span className="text-green-400">&quot;每周一早上 9 点发送周报&quot;</span>
-            </div>
-            <div className="border-t border-white/10 pt-4 space-y-2.5">
-              {demoRows.map((row) => (
-                <div key={row.label} className="flex justify-between gap-4">
-                  <span className="text-gray-500">{row.label}</span>
-                  <span className={row.color}>{row.value}</span>
-                </div>
-              ))}
-            </div>
+
+          {/* Examples */}
+          <div className="flex flex-wrap gap-2 mb-5">
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                onClick={() => setInput(ex)}
+                className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-3 py-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              >
+                {ex}
+              </button>
+            ))}
           </div>
+
+          {/* Button */}
+          <button
+            onClick={handleGenerate}
+            disabled={loading || !input.trim()}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors py-3 rounded-lg font-semibold text-base cursor-pointer"
+          >
+            {loading ? '生成中…' : '生成配置 →'}
+          </button>
+
+          {/* Error */}
+          {error && (
+            <p className="text-red-400 text-sm mt-3 text-center">{error}</p>
+          )}
+
+          {/* Result */}
+          {result && (
+            <div className="mt-6 space-y-3">
+              <p className="text-gray-400 text-sm">{result.description}</p>
+              <div className="space-y-2">
+                {PLATFORMS.map(({ key, label, color }) => {
+                  const value = key === 'cron' ? result.cron : result.platforms?.[key]
+                  if (!value) return null
+                  return (
+                    <div
+                      key={key}
+                      className="bg-[#0d0d1a] border border-white/10 rounded-lg p-3 group"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-gray-500 text-xs">{label}</span>
+                        <button
+                          onClick={() => handleCopy(value, key)}
+                          className="text-xs text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                        >
+                          {copied === key ? '✅ 已复制' : '复制'}
+                        </button>
+                      </div>
+                      <pre className={`text-sm font-mono whitespace-pre-wrap break-all ${color}`}>
+                        {value}
+                      </pre>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Features */}
       <section className="max-w-4xl mx-auto px-6 pb-20">
-        <h2 className="text-3xl font-bold text-center mb-12">为什么选 Hey Cron？</h2>
         <div className="grid sm:grid-cols-3 gap-6">
           {features.map((f) => (
             <div
@@ -159,17 +243,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Platforms */}
-      <section className="max-w-4xl mx-auto px-6 pb-20 text-center">
-        <p className="text-gray-500 text-xs mb-5 uppercase tracking-widest">支持导出平台</p>
-        <div className="flex flex-wrap justify-center gap-3">
-          {platforms.map((p) => (
-            <span
-              key={p}
-              className="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-sm text-gray-300"
-            >
-              {p}
-            </span>
+      {/* FAQ */}
+      <section className="max-w-2xl mx-auto px-6 pb-20">
+        <h2 className="text-3xl font-bold text-center mb-10">常见问题</h2>
+        <div className="space-y-4">
+          {faqs.map((faq) => (
+            <div key={faq.q} className="bg-gray-900/60 border border-white/10 rounded-xl p-6">
+              <h3 className="font-semibold mb-2">{faq.q}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{faq.a}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -177,14 +259,14 @@ export default function Home() {
       {/* Waitlist */}
       <section id="waitlist" className="max-w-xl mx-auto px-6 pb-24">
         <div className="bg-gradient-to-b from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 rounded-2xl p-10 text-center">
-          <h2 className="text-3xl font-bold mb-3">第一时间体验</h2>
-          <p className="text-gray-400 mb-8">加入候补名单，上线时优先通知。</p>
-          {status === 'success' ? (
+          <h2 className="text-2xl font-bold mb-2">获取更新通知</h2>
+          <p className="text-gray-400 mb-6 text-sm">留下邮箱，新功能上线第一时间通知你。</p>
+          {waitlistStatus === 'success' ? (
             <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-6 py-4 text-green-400">
-              ✅ 已收到！上线时第一时间通知你。
+              ✅ 已收到！
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleWaitlist} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 required
@@ -195,32 +277,13 @@ export default function Home() {
               />
               <button
                 type="submit"
-                disabled={status === 'loading'}
+                disabled={waitlistStatus === 'loading'}
                 className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 transition-colors px-6 py-3 rounded-lg font-semibold whitespace-nowrap cursor-pointer"
               >
-                {status === 'loading' ? '提交中…' : '加入候补'}
+                {waitlistStatus === 'loading' ? '提交中…' : '订阅'}
               </button>
             </form>
           )}
-          {status === 'error' && (
-            <p className="text-red-400 text-sm mt-3">提交失败，请稍后再试。</p>
-          )}
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="max-w-2xl mx-auto px-6 pb-24">
-        <h2 className="text-3xl font-bold text-center mb-10">常见问题</h2>
-        <div className="space-y-4">
-          {faqs.map((faq) => (
-            <div
-              key={faq.q}
-              className="bg-gray-900/60 border border-white/10 rounded-xl p-6"
-            >
-              <h3 className="font-semibold mb-2">{faq.q}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{faq.a}</p>
-            </div>
-          ))}
         </div>
       </section>
 
