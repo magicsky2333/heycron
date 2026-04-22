@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Nav from '@/components/Nav'
+import { useLang } from '@/contexts/LanguageContext'
 
 const PLATFORMS = [
   { key: 'cron', label: 'Cron Expression', color: 'text-yellow-400' },
@@ -124,8 +126,6 @@ const I18N = {
   },
 }
 
-type Lang = 'zh' | 'en'
-
 type Result = {
   cron: string
   description: string
@@ -133,7 +133,7 @@ type Result = {
 }
 
 export default function Home() {
-  const [lang, setLang] = useState<Lang>('zh')
+  const { lang } = useLang()
   const [input, setInput] = useState('')
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(false)
@@ -195,31 +195,11 @@ export default function Home() {
     }
   }
 
-  const switchLang = () => {
-    setLang(lang === 'zh' ? 'en' : 'zh')
-    setInput('')
-    setResult(null)
-    setError('')
-  }
 
   return (
     <main className="min-h-screen bg-[#080812] text-white antialiased">
 
-      {/* Nav */}
-      <nav className="border-b border-white/10 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⏰</span>
-            <span className="font-bold text-lg tracking-tight">Hey Cron</span>
-          </div>
-          <button
-            onClick={switchLang}
-            className="text-sm text-gray-400 hover:text-white border border-white/20 hover:border-white/40 rounded-full px-4 py-1.5 transition-colors cursor-pointer"
-          >
-            {lang === 'zh' ? 'EN' : '中文'}
-          </button>
-        </div>
-      </nav>
+      <Nav />
 
       {/* Hero */}
       <section className="max-w-3xl mx-auto px-6 pt-16 pb-8 text-center">

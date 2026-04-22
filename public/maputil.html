@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>坐标地图定位工具 - 高德/百度/天地图</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f4f5f7; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid #e4e6eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .toolbar h1 { font-size: 16px; margin: 0 16px 0 0; color: #1f2937; }
+  .toolbar label { font-size: 13px; color: #374151; }
+  .toolbar input[type="number"], .toolbar input[type="text"] {
+    width: 150px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;
+  }
+  .toolbar select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; background: #fff; }
+  .toolbar button {
+    padding: 6px 14px; background: #2563eb; color: #fff; border: none; border-radius: 4px;
+    font-size: 13px; cursor: pointer;
+  }
+  .toolbar button:hover { background: #1d4ed8; }
+  .toolbar button.sec { background: #6b7280; }
+  .toolbar button.sec:hover { background: #4b5563; }
+  .hint { color: #6b7280; font-size: 12px; }
+  .maps {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    padding: 8px; height: calc(100vh - 60px);
+  }
+  .map-wrap {
+    position: relative; background: #fff; border-radius: 6px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; flex-direction: column;
+  }
+  .map-title {
+    padding: 6px 12px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+    font-size: 13px; font-weight: 600; color: #374151;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .map-title .coord { font-weight: normal; color: #6b7280; font-size: 11px; font-family: monospace; }
+  .map-box { flex: 1; width: 100%; }
+  .err {
+    padding: 20px; color: #b91c1c; font-size: 13px; background: #fef2f2;
+  }
+  @media (max-width: 900px) {
+    .maps { grid-template-columns: 1fr; height: auto; }
+    .map-wrap { height: 400px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>坐标地图定位工具</h1>
+  <label>经度 <input type="number" id="lng" step="0.000001" value="116.397428" /></label>
+  <label>纬度 <input type="number" id="lat" step="0.000001" value="39.90923" /></label>
+  <label>坐标系
+    <select id="srcType">
+      <option value="wgs84">WGS84 (GPS)</option>
+      <option value="gcj02">GCJ02 (火星/高德)</option>
+      <option value="bd09">BD09 (百度)</option>
+    </select>
+  </label>
+  <button id="btnLocate">定位</button>
+  <button class="sec" id="btnPaste">粘贴 "lng,lat"</button>
+  <span class="hint">点击任一地图可拾取坐标</span>
+</div>
+
+<div class="maps">
+  <div class="map-wrap">
+    <div class="map-title">高德地图 (GCJ02) <span class="coord" id="coordGD">-</span></div>
+    <div id="mapGD" class="map-box"></div>
+  </div>
+  <div class="map-wrap">
+    <div class="map-title">百度地图 (BD09) <span class="coord" id="coordBD">-</span></div>
+    <div id="mapBD" class="map-box"></div>
+  </div>
+  <div class="map-wrap">
+    <div class="map-title">天地图 (WGS84) <span class="coord" id="coordTD">-</span></div>
+    <div id="mapTD" class="map-box"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+ * 配置：替换为你自己的 Key
+ * 高德: https://console.amap.com/
+ * 百度: https://lbsyun.baidu.com/
+ * 天地图: https://console.tianditu.gov.cn/
+ * ============================================================ */
+const KEYS = {
+  amap:     '72d1640f7414bd5f642d48e6bc620899',  // 高德 Web 端 JS API key
+  amapSec:  '2c4a6f3494eb97b2ebcf5b2d12451b1c',  // 高德安全密钥
+  baidu:    'nJnMcYLuk3p7KPc3Iqc1i5AyTzeTwQdO',  // 百度 Web JS API ak
+  tianditu: '15763e5c389b9db2b731abcca21259b9'  // 天地图 tk
+};
+
+/* ============================================================
+ * 坐标转换 (WGS84 / GCJ02 / BD09)
+ * ============================================================ */
+const CoordTransform = (function () {
+  const PI = Math.PI;
+  const a = 6378245.0;
+  const ee = 0.00669342162296594323;
+  const x_PI = (PI * 3000.0) / 180.0;
+
+  function outOfChina(lng, lat) {
+    return lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271;
+  }
+  function transformLat(x, y) {
+    let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    ret += ((20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0) / 3.0;
+    ret += ((20.0 * Math.sin(y * PI) + 40.0 * Math.sin((y / 3.0) * PI)) * 2.0) / 3.0;
+    ret += ((160.0 * Math.sin((y / 12.0) * PI) + 320 * Math.sin((y * PI) / 30.0)) * 2.0) / 3.0;
+    return ret;
+  }
+  function transformLng(x, y) {
+    let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    ret += ((20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0) / 3.0;
+    ret += ((20.0 * Math.sin(x * PI) + 40.0 * Math.sin((x / 3.0) * PI)) * 2.0) / 3.0;
+    ret += ((150.0 * Math.sin((x / 12.0) * PI) + 300.0 * Math.sin((x / 30.0) * PI)) * 2.0) / 3.0;
+    return ret;
+  }
+  function wgs84ToGcj02(lng, lat) {
+    if (outOfChina(lng, lat)) return [lng, lat];
+    let dLat = transformLat(lng - 105.0, lat - 35.0);
+    let dLng = transformLng(lng - 105.0, lat - 35.0);
+    const radLat = (lat / 180.0) * PI;
+    let magic = Math.sin(radLat);
+    magic = 1 - ee * magic * magic;
+    const sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat * 180.0) / (((a * (1 - ee)) / (magic * sqrtMagic)) * PI);
+    dLng = (dLng * 180.0) / ((a / sqrtMagic) * Math.cos(radLat) * PI);
+    return [lng + dLng, lat + dLat];
+  }
+  function gcj02ToWgs84(lng, lat) {
+    if (outOfChina(lng, lat)) return [lng, lat];
+    const [mLng, mLat] = wgs84ToGcj02(lng, lat);
+    return [lng * 2 - mLng, lat * 2 - mLat];
+  }
+  function gcj02ToBd09(lng, lat) {
+    const z = Math.sqrt(lng * lng + lat * lat) + 0.00002 * Math.sin(lat * x_PI);
+    const theta = Math.atan2(lat, lng) + 0.000003 * Math.cos(lng * x_PI);
+    return [z * Math.cos(theta) + 0.0065, z * Math.sin(theta) + 0.006];
+  }
+  function bd09ToGcj02(lng, lat) {
+    const x = lng - 0.0065, y = lat - 0.006;
+    const z = Math.sqrt(x * x + y * y) - 0.00002 * Math.sin(y * x_PI);
+    const theta = Math.atan2(y, x) - 0.000003 * Math.cos(x * x_PI);
+    return [z * Math.cos(theta), z * Math.sin(theta)];
+  }
+  function wgs84ToBd09(lng, lat) {
+    const [g1, g2] = wgs84ToGcj02(lng, lat);
+    return gcj02ToBd09(g1, g2);
+  }
+  function bd09ToWgs84(lng, lat) {
+    const [g1, g2] = bd09ToGcj02(lng, lat);
+    return gcj02ToWgs84(g1, g2);
+  }
+  // 任意源类型 -> 三种目标
+  function toAll(src, lng, lat) {
+    let wgs, gcj, bd;
+    if (src === 'wgs84') {
+      wgs = [lng, lat];
+      gcj = wgs84ToGcj02(lng, lat);
+      bd  = gcj02ToBd09(gcj[0], gcj[1]);
+    } else if (src === 'gcj02') {
+      gcj = [lng, lat];
+      wgs = gcj02ToWgs84(lng, lat);
+      bd  = gcj02ToBd09(lng, lat);
+    } else { // bd09
+      bd  = [lng, lat];
+      gcj = bd09ToGcj02(lng, lat);
+      wgs = gcj02ToWgs84(gcj[0], gcj[1]);
+    }
+    return { wgs84: wgs, gcj02: gcj, bd09: bd };
+  }
+  return { toAll, wgs84ToGcj02, gcj02ToWgs84, gcj02ToBd09, bd09ToGcj02, wgs84ToBd09, bd09ToWgs84 };
+})();
+
+/* ============================================================
+ * 动态加载脚本工具
+ * ============================================================ */
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('加载失败: ' + src));
+    document.head.appendChild(s);
+  });
+}
+function showErr(id, msg) {
+  document.getElementById(id).innerHTML = '<div class="err">' + msg + '</div>';
+}
+function fmt(ll) { return ll[0].toFixed(6) + ', ' + ll[1].toFixed(6); }
+
+/* 统一的大头针图标 (SVG data URL)，三地图共用 */
+const PIN_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">' +
+    '<defs><filter id="s" x="-50%" y="-50%" width="200%" height="200%">' +
+      '<feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.45"/>' +
+    '</filter></defs>' +
+    '<path filter="url(#s)" fill="#ef4444" stroke="#ffffff" stroke-width="2.5" ' +
+      'd="M20 2 C10 2 2.5 10 2.5 20 C2.5 33 20 49 20 49 C20 49 37.5 33 37.5 20 C37.5 10 30 2 20 2 Z"/>' +
+    '<circle cx="20" cy="20" r="6" fill="#ffffff"/>' +
+    '<circle cx="20" cy="20" r="3" fill="#ef4444"/>' +
+  '</svg>';
+const PIN_URL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(PIN_SVG);
+const PIN_SIZE = [40, 52];   // width, height
+const PIN_ANCHOR = [20, 50]; // 底部尖端
+
+/* ============================================================
+ * 三个地图封装
+ * ============================================================ */
+const MapGD = {
+  map: null, marker: null,
+  async init() {
+    if (!KEYS.amap || KEYS.amap === 'YOUR_AMAP_KEY') {
+      showErr('mapGD', '请先在 index.html 顶部配置 KEYS.amap 高德 Key');
+      return;
+    }
+    if (KEYS.amapSec) window._AMapSecurityConfig = { securityJsCode: KEYS.amapSec };
+    try {
+      await loadScript('https://webapi.amap.com/maps?v=2.0&key=' + KEYS.amap);
+      this.map = new AMap.Map('mapGD', { zoom: 15, center: [116.397428, 39.90923] });
+      this.map.on('click', (e) => {
+        const lng = e.lnglat.getLng(), lat = e.lnglat.getLat();
+        onMapPick('gcj02', lng, lat);
+      });
+    } catch (e) { showErr('mapGD', '高德地图加载失败: ' + e.message); }
+  },
+  setCenter(lng, lat) {
+    if (!this.map) return;
+    const pos = [lng, lat];
+    this.map.setZoomAndCenter(17, pos);
+    if (this.marker) {
+      this.marker.setPosition(pos);
+    } else {
+      const icon = new AMap.Icon({
+        image: PIN_URL,
+        size: new AMap.Size(PIN_SIZE[0], PIN_SIZE[1]),
+        imageSize: new AMap.Size(PIN_SIZE[0], PIN_SIZE[1])
+      });
+      this.marker = new AMap.Marker({
+        position: pos,
+        icon: icon,
+        offset: new AMap.Pixel(-PIN_ANCHOR[0], -PIN_ANCHOR[1]),
+        zIndex: 200,
+        map: this.map
+      });
+    }
+  }
+};
+
+const MapBD = {
+  map: null, marker: null,
+  async init() {
+    if (!KEYS.baidu || KEYS.baidu === 'YOUR_BAIDU_AK') {
+      showErr('mapBD', '请先在 index.html 顶部配置 KEYS.baidu 百度 AK');
+      return;
+    }
+    return new Promise((resolve) => {
+      window.initBaidu = () => {
+        this.map = new BMap.Map('mapBD');
+        this.map.centerAndZoom(new BMap.Point(116.404, 39.915), 15);
+        this.map.enableScrollWheelZoom(true);
+        this.map.addEventListener('click', (e) => {
+          onMapPick('bd09', e.point.lng, e.point.lat);
+        });
+        resolve();
+      };
+      const src = 'https://api.map.baidu.com/api?v=3.0&ak=' + KEYS.baidu + '&callback=initBaidu';
+      loadScript(src).catch((e) => { showErr('mapBD', '百度地图加载失败: ' + e.message); resolve(); });
+    });
+  },
+  setCenter(lng, lat) {
+    if (!this.map) return;
+    const pt = new BMap.Point(lng, lat);
+    this.map.centerAndZoom(pt, 17);
+    if (this.marker) {
+      this.marker.setPosition(pt);
+    } else {
+      const icon = new BMap.Icon(
+        PIN_URL,
+        new BMap.Size(PIN_SIZE[0], PIN_SIZE[1]),
+        { anchor: new BMap.Size(PIN_ANCHOR[0], PIN_ANCHOR[1]) }
+      );
+      this.marker = new BMap.Marker(pt, { icon: icon });
+      this.map.addOverlay(this.marker);
+    }
+  }
+};
+
+const MapTD = {
+  map: null, marker: null,
+  async init() {
+    if (!KEYS.tianditu || KEYS.tianditu === 'YOUR_TIANDITU_TK') {
+      showErr('mapTD', '请先在 index.html 顶部配置 KEYS.tianditu 天地图 tk');
+      return;
+    }
+    try {
+      await loadScript('https://api.tianditu.gov.cn/api?v=4.0&tk=' + KEYS.tianditu);
+      this.map = new T.Map('mapTD');
+      this.map.centerAndZoom(new T.LngLat(116.397428, 39.90923), 15);
+      this.map.addEventListener('click', (e) => {
+        onMapPick('wgs84', e.lnglat.getLng(), e.lnglat.getLat());
+      });
+    } catch (e) { showErr('mapTD', '天地图加载失败: ' + e.message); }
+  },
+  setCenter(lng, lat) {
+    if (!this.map) return;
+    const pt = new T.LngLat(lng, lat);
+    this.map.centerAndZoom(pt, 17);
+    if (this.marker) {
+      this.map.removeOverLay(this.marker);
+    }
+    const icon = new T.Icon({
+      iconUrl: PIN_URL,
+      iconSize: new T.Point(PIN_SIZE[0], PIN_SIZE[1]),
+      iconAnchor: new T.Point(PIN_ANCHOR[0], PIN_ANCHOR[1])
+    });
+    this.marker = new T.Marker(pt, { icon: icon });
+    this.map.addOverLay(this.marker);
+  }
+};
+
+/* ============================================================
+ * 联动逻辑
+ * ============================================================ */
+function locate(src, lng, lat) {
+  if (isNaN(lng) || isNaN(lat)) { alert('请输入有效的经纬度'); return; }
+  const all = CoordTransform.toAll(src, lng, lat);
+  document.getElementById('coordGD').textContent = fmt(all.gcj02);
+  document.getElementById('coordBD').textContent = fmt(all.bd09);
+  document.getElementById('coordTD').textContent = fmt(all.wgs84);
+  MapGD.setCenter(all.gcj02[0], all.gcj02[1]);
+  MapBD.setCenter(all.bd09[0], all.bd09[1]);
+  MapTD.setCenter(all.wgs84[0], all.wgs84[1]);
+}
+
+// 点击任一地图拾取坐标 -> 回填输入框并同步其他两个地图
+function onMapPick(srcType, lng, lat) {
+  document.getElementById('srcType').value = srcType;
+  document.getElementById('lng').value = lng.toFixed(6);
+  document.getElementById('lat').value = lat.toFixed(6);
+  locate(srcType, lng, lat);
+}
+
+function doLocateFromInput() {
+  const lng = parseFloat(document.getElementById('lng').value);
+  const lat = parseFloat(document.getElementById('lat').value);
+  const src = document.getElementById('srcType').value;
+  locate(src, lng, lat);
+}
+
+document.getElementById('btnLocate').addEventListener('click', doLocateFromInput);
+document.getElementById('lng').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLocateFromInput(); });
+document.getElementById('lat').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLocateFromInput(); });
+
+document.getElementById('btnPaste').addEventListener('click', async () => {
+  try {
+    const txt = await navigator.clipboard.readText();
+    const m = txt.match(/(-?\d+\.?\d*)\s*[,，\s]\s*(-?\d+\.?\d*)/);
+    if (!m) { alert('剪贴板内容未识别为 经度,纬度'); return; }
+    document.getElementById('lng').value = m[1];
+    document.getElementById('lat').value = m[2];
+    doLocateFromInput();
+  } catch (e) { alert('读取剪贴板失败: ' + e.message); }
+});
+
+/* 初始化所有地图 */
+(async function () {
+  await Promise.all([MapGD.init(), MapBD.init(), MapTD.init()]);
+  // 默认定位一次
+  doLocateFromInput();
+})();
+</script>
+</body>
+</html>

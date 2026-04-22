@@ -1,40 +1,32 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
+import { LanguageProvider } from '@/contexts/LanguageContext'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Hey Cron — 用自然语言生成 Cron 表达式',
+  title: 'Hey Cron — Developer Tools',
   description:
-    '输入一句话，即刻生成可用于 Kubernetes、GitHub Actions、Jenkins、Airflow 的 Cron 配置代码。支持中英文。',
+    '开发者工具集：Cron 表达式生成、Regex 生成、JSON 格式化、Base64、时间戳转换、JWT 解码、地图坐标转换、中英翻译。',
   metadataBase: new URL('https://heycron.com'),
   openGraph: {
-    title: 'Hey Cron — 用自然语言生成 Cron 表达式',
-    description:
-      '输入一句话，即刻生成可用于 Kubernetes、GitHub Actions、Jenkins、Airflow 的 Cron 配置代码。',
+    title: 'Hey Cron — Developer Tools',
+    description: '开发者工具集，支持 Cron、Regex、JSON、Base64、Timestamp、JWT、地图坐标、翻译等。',
     url: 'https://heycron.com',
     siteName: 'Hey Cron',
-    locale: 'zh_CN',
     type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Hey Cron — 用自然语言生成 Cron 表达式',
-    description: '输入一句话，即刻生成多平台 Cron 配置代码。支持中英文。',
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh">
       <body className={inter.className}>
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
         <Analytics />
       </body>
     </html>
