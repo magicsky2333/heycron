@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { parseRegexLocal } from '@/lib/regex-local'
 
 export async function POST(req: NextRequest) {
   const { input } = await req.json()
@@ -7,6 +8,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '请输入描述' }, { status: 400 })
   }
 
+  // ① 本地规则库 — 0 延迟
+  const local = parseRegexLocal(input)
+  if (local) {
+    return NextResponse.json(local)
+  }
+
+  // ② AI 兜底 — 处理自定义复杂描述
   const prompt = `You are a regular expression expert. Convert the following natural language description into a regex pattern with explanations and multi-language code examples.
 
 Input: "${input}"
@@ -14,7 +22,6 @@ Input: "${input}"
 Rules:
 - Support both Chinese and English input
 - Generate a practical, correct regex pattern
-- Explain each part of the regex clearly
 - Return ONLY raw JSON, no markdown
 
 Required JSON structure:
@@ -23,18 +30,17 @@ Required JSON structure:
   "flags": "i",
   "description": "匹配标准邮箱地址格式",
   "explanation": [
-    { "part": "^", "meaning": "字符串开头" },
-    { "part": "[a-zA-Z0-9._%+-]+", "meaning": "邮箱用户名：字母、数字或特殊字符" }
+    { "part": "^", "meaning": "字符串开头" }
   ],
   "examples": {
-    "match": ["user@example.com", "hello@domain.org"],
-    "noMatch": ["invalid-email", "@nodomain.com"]
+    "match": ["example1", "example2"],
+    "noMatch": ["bad1", "bad2"]
   },
   "code": {
-    "javascript": "const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$/i;",
-    "python": "import re\\npattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$'",
-    "go": "import \\"regexp\\"\\nre := regexp.MustCompile(\`(?i)^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$\`)",
-    "java": "Pattern pattern = Pattern.compile(\\"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\\\\\.[a-zA-Z]{2,}$\\", Pattern.CASE_INSENSITIVE);"
+    "javascript": "const regex = /pattern/flags;",
+    "python": "import re\\npattern = r'...'",
+    "go": "import \\"regexp\\"\\nre := regexp.MustCompile(\`...\`)",
+    "java": "Pattern p = Pattern.compile(\\"...\\");"
   }
 }`
 
@@ -49,7 +55,7 @@ Required JSON structure:
         model: 'Qwen/Qwen2.5-72B-Instruct',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
-        max_tokens: 800,
+        max_tokens: 700,
       }),
     })
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { parseCronLocal } from '@/lib/cron-local'
 
 export async function POST(req: NextRequest) {
   const { input } = await req.json()
@@ -7,6 +8,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '请输入描述' }, { status: 400 })
   }
 
+  // ① 本地规则引擎 — 0 延迟
+  const local = parseCronLocal(input)
+  if (local) {
+    return NextResponse.json(local)
+  }
+
+  // ② AI 兜底 — 处理复杂/罕见描述
   const prompt = `You are a cron expression expert. Convert the following natural language schedule description into a cron expression and multi-platform configs.
 
 Input: "${input}"
@@ -43,7 +51,7 @@ Required JSON structure:
         model: 'Qwen/Qwen2.5-72B-Instruct',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
-        max_tokens: 800,
+        max_tokens: 600,
       }),
     })
 
@@ -53,8 +61,6 @@ Required JSON structure:
 
     const data = await response.json()
     const content = data.choices[0].message.content.trim()
-
-    // 去掉可能的 markdown 包裹
     const cleaned = content.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim()
     const result = JSON.parse(cleaned)
 
