@@ -29,11 +29,31 @@ export default function TranslatePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: input, direction }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || (isZh ? '翻译失败，请重试' : 'Translation failed, please try again'))
-      } else {
-        setOutput(data.result)
+      if (!res.ok || !res.body) {
+        setError(isZh ? '翻译失败，请重试' : 'Translation failed, please try again')
+        setLoading(false)
+        return
+      }
+      // 流式读取
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') continue
+          try {
+            const parsed = JSON.parse(data)
+            const content = parsed.choices?.[0]?.delta?.content
+            if (content) setOutput((prev) => prev + content)
+          } catch { /* skip malformed chunks */ }
+        }
       }
     } catch {
       setError(isZh ? '网络异常，请重试' : 'Network error, please try again')
