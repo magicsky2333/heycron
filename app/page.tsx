@@ -5,14 +5,14 @@ import Nav from '@/components/Nav'
 import { useLang } from '@/contexts/LanguageContext'
 
 const PLATFORMS = [
-  { key: 'cron', label: 'Cron Expression', color: 'text-yellow-400' },
-  { key: 'kubernetes', label: 'Kubernetes', color: 'text-blue-400' },
-  { key: 'github_actions', label: 'GitHub Actions', color: 'text-purple-400' },
-  { key: 'jenkins', label: 'Jenkins', color: 'text-orange-400' },
-  { key: 'airflow', label: 'Apache Airflow', color: 'text-green-400' },
-  { key: 'crontab', label: 'Linux crontab', color: 'text-cyan-400' },
-  { key: 'nodejs', label: 'Node.js', color: 'text-lime-400' },
-  { key: 'python', label: 'Python', color: 'text-pink-400' },
+  { key: 'cron', label: 'Cron Expression', color: 'text-yellow-500 dark:text-yellow-400' },
+  { key: 'kubernetes', label: 'Kubernetes', color: 'text-blue-600 dark:text-blue-400' },
+  { key: 'github_actions', label: 'GitHub Actions', color: 'text-purple-600 dark:text-purple-400' },
+  { key: 'jenkins', label: 'Jenkins', color: 'text-orange-600 dark:text-orange-400' },
+  { key: 'airflow', label: 'Apache Airflow', color: 'text-green-600 dark:text-green-400' },
+  { key: 'crontab', label: 'Linux crontab', color: 'text-cyan-600 dark:text-cyan-400' },
+  { key: 'nodejs', label: 'Node.js', color: 'text-lime-600 dark:text-lime-400' },
+  { key: 'python', label: 'Python', color: 'text-pink-600 dark:text-pink-400' },
 ]
 
 const I18N = {
@@ -195,9 +195,8 @@ export default function Home() {
     }
   }
 
-
   return (
-    <main className="min-h-screen bg-[#080812] text-white antialiased">
+    <main className="min-h-screen bg-gray-50 text-gray-900 antialiased dark:bg-[#080812] dark:text-white">
 
       <Nav />
 
@@ -205,16 +204,16 @@ export default function Home() {
       <section className="max-w-3xl mx-auto px-6 pt-16 pb-8 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-4 tracking-tight">
           {t.heroTitle1}{' '}
-          <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
             {t.heroTitle2}
           </span>
         </h1>
-        <p className="text-lg text-gray-400 mb-8">{t.heroDesc}</p>
+        <p className="text-lg text-gray-500 dark:text-gray-400 mb-8">{t.heroDesc}</p>
       </section>
 
       {/* Generator */}
       <section className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="bg-gray-900 border border-white/10 rounded-xl p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 dark:bg-gray-900 dark:border-white/10">
           <div className="mb-4">
             <input
               type="text"
@@ -222,7 +221,7 @@ export default function Home() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               placeholder={t.placeholder}
-              className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors text-base"
+              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors text-base dark:bg-white/5 dark:border-white/20 dark:text-white dark:placeholder-gray-500"
             />
           </div>
 
@@ -231,7 +230,7 @@ export default function Home() {
               <button
                 key={ex}
                 onClick={() => setInput(ex)}
-                className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-3 py-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                className="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-full px-3 py-1 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer dark:bg-white/5 dark:hover:bg-white/10 dark:border-white/10 dark:text-gray-400 dark:hover:text-white"
               >
                 {ex}
               </button>
@@ -241,27 +240,39 @@ export default function Home() {
           <button
             onClick={handleGenerate}
             disabled={loading || !input.trim()}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors py-3 rounded-lg font-semibold text-base cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors py-3 rounded-lg font-semibold text-base cursor-pointer text-white"
           >
-            {loading ? t.generating : t.generateBtn}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                {t.generating}
+              </span>
+            ) : t.generateBtn}
           </button>
 
-          {error && <p className="text-red-400 text-sm mt-3 text-center">{error}</p>}
+          {/* Loading progress bar */}
+          {loading && (
+            <div className="mt-3 h-1 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-indigo-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+            </div>
+          )}
+
+          {error && <p className="text-red-500 dark:text-red-400 text-sm mt-3 text-center">{error}</p>}
 
           {result && (
             <div className="mt-6 space-y-3">
-              <p className="text-gray-400 text-sm">{result.description}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{result.description}</p>
               <div className="space-y-2">
                 {PLATFORMS.map(({ key, label, color }) => {
                   const value = key === 'cron' ? result.cron : result.platforms?.[key]
                   if (!value) return null
                   return (
-                    <div key={key} className="bg-[#0d0d1a] border border-white/10 rounded-lg p-3 group">
+                    <div key={key} className="bg-gray-100 border border-gray-200 rounded-lg p-3 group dark:bg-[#0d0d1a] dark:border-white/10">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-gray-500 text-xs">{label}</span>
+                        <span className="text-gray-400 dark:text-gray-500 text-xs">{label}</span>
                         <button
                           onClick={() => handleCopy(value, key)}
-                          className="text-xs text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                          className="text-xs text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-white transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                         >
                           {copied === key ? t.copied : t.copyBtn}
                         </button>
@@ -284,11 +295,11 @@ export default function Home() {
           {t.features.map((f) => (
             <div
               key={f.title}
-              className="bg-gray-900/60 border border-white/10 rounded-xl p-6 hover:border-indigo-500/30 transition-colors"
+              className="bg-white/60 border border-gray-200 rounded-xl p-6 hover:border-indigo-300 transition-colors dark:bg-gray-900/60 dark:border-white/10 dark:hover:border-indigo-500/30"
             >
               <div className="text-3xl mb-4">{f.icon}</div>
               <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -299,9 +310,9 @@ export default function Home() {
         <h2 className="text-3xl font-bold text-center mb-10">{t.faqTitle}</h2>
         <div className="space-y-4">
           {t.faqs.map((faq) => (
-            <div key={faq.q} className="bg-gray-900/60 border border-white/10 rounded-xl p-6">
+            <div key={faq.q} className="bg-white/60 border border-gray-200 rounded-xl p-6 dark:bg-gray-900/60 dark:border-white/10">
               <h3 className="font-semibold mb-2">{faq.q}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{faq.a}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{faq.a}</p>
             </div>
           ))}
         </div>
@@ -309,11 +320,11 @@ export default function Home() {
 
       {/* Waitlist */}
       <section id="waitlist" className="max-w-xl mx-auto px-6 pb-24">
-        <div className="bg-gradient-to-b from-indigo-500/10 to-purple-500/5 border border-indigo-500/20 rounded-2xl p-10 text-center">
+        <div className="bg-gradient-to-b from-indigo-500/10 to-purple-500/5 border border-indigo-300/40 dark:border-indigo-500/20 rounded-2xl p-10 text-center">
           <h2 className="text-2xl font-bold mb-2">{t.notifyTitle}</h2>
-          <p className="text-gray-400 mb-6 text-sm">{t.notifyDesc}</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">{t.notifyDesc}</p>
           {waitlistStatus === 'success' ? (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-6 py-4 text-green-400">
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg px-6 py-4 text-green-600 dark:text-green-400">
               {t.notifySuccess}
             </div>
           ) : (
@@ -324,12 +335,12 @@ export default function Home() {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors dark:bg-white/5 dark:border-white/20 dark:text-white dark:placeholder-gray-500"
               />
               <button
                 type="submit"
                 disabled={waitlistStatus === 'loading'}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 transition-colors px-6 py-3 rounded-lg font-semibold whitespace-nowrap cursor-pointer"
+                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white transition-colors px-6 py-3 rounded-lg font-semibold whitespace-nowrap cursor-pointer"
               >
                 {waitlistStatus === 'loading' ? t.subscribing : t.subscribeBtn}
               </button>
@@ -339,10 +350,10 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8 text-center text-gray-600 text-sm">
+      <footer className="border-t border-gray-200 dark:border-white/10 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
         <p>
           © 2025 Hey Cron ·{' '}
-          <a href="mailto:hi@heycron.com" className="hover:text-gray-400 transition-colors">
+          <a href="mailto:hi@heycron.com" className="hover:text-gray-600 dark:hover:text-gray-400 transition-colors">
             hi@heycron.com
           </a>
         </p>

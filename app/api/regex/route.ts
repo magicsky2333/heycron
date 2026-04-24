@@ -24,21 +24,17 @@ Required JSON structure:
   "description": "匹配标准邮箱地址格式",
   "explanation": [
     { "part": "^", "meaning": "字符串开头" },
-    { "part": "[a-zA-Z0-9._%+-]+", "meaning": "邮箱用户名：字母、数字或特殊字符" },
-    { "part": "@", "meaning": "@ 符号" },
-    { "part": "[a-zA-Z0-9.-]+", "meaning": "域名部分" },
-    { "part": "\\\\.", "meaning": "点号（转义）" },
-    { "part": "[a-zA-Z]{2,}$", "meaning": "顶级域名，至少2个字母" }
+    { "part": "[a-zA-Z0-9._%+-]+", "meaning": "邮箱用户名：字母、数字或特殊字符" }
   ],
   "examples": {
-    "match": ["user@example.com", "hello.world@domain.org"],
+    "match": ["user@example.com", "hello@domain.org"],
     "noMatch": ["invalid-email", "@nodomain.com"]
   },
   "code": {
-    "javascript": "const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$/i;\\nconst isMatch = regex.test(input);",
-    "python": "import re\\npattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$'\\nmatch = re.match(pattern, input, re.IGNORECASE)",
-    "go": "import \\"regexp\\"\\nre := regexp.MustCompile(\`(?i)^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$\`)\\nmatched := re.MatchString(input)",
-    "java": "import java.util.regex.*;\\nPattern pattern = Pattern.compile(\\"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\\\\\.[a-zA-Z]{2,}$\\", Pattern.CASE_INSENSITIVE);\\nMatcher matcher = pattern.matcher(input);"
+    "javascript": "const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$/i;",
+    "python": "import re\\npattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$'",
+    "go": "import \\"regexp\\"\\nre := regexp.MustCompile(\`(?i)^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$\`)",
+    "java": "Pattern pattern = Pattern.compile(\\"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\\\\\.[a-zA-Z]{2,}$\\", Pattern.CASE_INSENSITIVE);"
   }
 }`
 
@@ -50,10 +46,10 @@ Required JSON structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-ai/DeepSeek-V3',
+        model: 'Qwen/Qwen2.5-72B-Instruct',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
-        max_tokens: 1200,
+        max_tokens: 800,
       }),
     })
 

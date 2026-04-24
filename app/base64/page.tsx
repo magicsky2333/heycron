@@ -39,32 +39,31 @@ export default function Base64Page() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080812] text-white antialiased">
+    <main className="min-h-screen bg-gray-50 text-gray-900 antialiased dark:bg-[#080812] dark:text-white">
       <Nav />
 
       <section className="max-w-3xl mx-auto px-6 pt-12 pb-6 text-center">
         <h1 className="text-4xl font-bold mb-3 tracking-tight">
           Base64{' '}
-          <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">
             编码 / 解码
           </span>
         </h1>
-        <p className="text-gray-400">在线 Base64 编解码工具，支持中文和特殊字符</p>
+        <p className="text-gray-500 dark:text-gray-400">在线 Base64 编解码工具，支持中文和特殊字符</p>
       </section>
 
       <section className="max-w-3xl mx-auto px-6 pb-16">
-        {/* Mode */}
         <div className="flex items-center gap-2 mb-4">
-          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-lg p-1">
             <button
               onClick={() => { setMode('encode'); setInput(''); setOutput(''); setError('') }}
-              className={`px-4 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${mode === 'encode' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${mode === 'encode' ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
             >
               编码 Encode
             </button>
             <button
               onClick={() => { setMode('decode'); setInput(''); setOutput(''); setError('') }}
-              className={`px-4 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${mode === 'decode' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${mode === 'decode' ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'}`}
             >
               解码 Decode
             </button>
@@ -72,34 +71,32 @@ export default function Base64Page() {
         </div>
 
         <div className="space-y-4">
-          {/* Input */}
           <div>
             <div className="flex justify-between mb-2">
-              <span className="text-xs text-gray-500">{mode === 'encode' ? '原始文本' : 'Base64 字符串'}</span>
-              <span className="text-xs text-gray-600">{input.length} 字符</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{mode === 'encode' ? '原始文本' : 'Base64 字符串'}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-600">{input.length} 字符</span>
             </div>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={mode === 'encode' ? '输入要编码的文本，支持中文' : '输入要解码的 Base64 字符串'}
-              className="w-full h-40 bg-gray-900 border border-white/10 rounded-xl p-4 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+              className="w-full h-40 bg-white border border-gray-300 rounded-xl p-4 text-sm font-mono text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors resize-none dark:bg-gray-900 dark:border-white/10 dark:text-white dark:placeholder-gray-600"
               spellCheck={false}
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3">
             <button
               onClick={handleConvert}
               disabled={!input.trim()}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-2.5 rounded-lg font-semibold text-sm transition-colors cursor-pointer"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors cursor-pointer"
             >
               {mode === 'encode' ? '编码 →' : '解码 →'}
             </button>
             {output && (
               <button
                 onClick={handleSwap}
-                className="bg-white/10 hover:bg-white/20 px-4 py-2.5 rounded-lg text-sm transition-colors cursor-pointer"
+                className="bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 px-4 py-2.5 rounded-lg text-sm transition-colors cursor-pointer"
                 title="交换输入输出"
               >
                 ⇄ 反转
@@ -107,26 +104,25 @@ export default function Base64Page() {
             )}
           </div>
 
-          {/* Output */}
           {(output || error) && (
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-xs text-gray-500">{mode === 'encode' ? 'Base64 结果' : '解码结果'}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{mode === 'encode' ? 'Base64 结果' : '解码结果'}</span>
                 {output && (
-                  <button onClick={handleCopy} className="text-xs text-gray-500 hover:text-white transition-colors cursor-pointer">
+                  <button onClick={handleCopy} className="text-xs text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-white transition-colors cursor-pointer">
                     {copied ? '✅ 已复制' : '复制'}
                   </button>
                 )}
               </div>
               {error ? (
-                <div className="bg-red-500/5 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
+                <div className="bg-red-50 border border-red-300 rounded-xl p-4 text-sm text-red-600 dark:bg-red-500/5 dark:border-red-500/30 dark:text-red-400">
                   {error}
                 </div>
               ) : (
                 <textarea
                   value={output}
                   readOnly
-                  className="w-full h-40 bg-gray-900 border border-white/10 rounded-xl p-4 text-sm font-mono text-green-400 focus:outline-none resize-none"
+                  className="w-full h-40 bg-white border border-gray-300 rounded-xl p-4 text-sm font-mono text-green-700 focus:outline-none resize-none dark:bg-gray-900 dark:border-white/10 dark:text-green-400"
                   spellCheck={false}
                 />
               )}
@@ -135,8 +131,8 @@ export default function Base64Page() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 py-8 text-center text-gray-600 text-sm">
-        <p>© 2025 Hey Cron · <a href="mailto:hi@heycron.com" className="hover:text-gray-400">hi@heycron.com</a></p>
+      <footer className="border-t border-gray-200 dark:border-white/10 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
+        <p>© 2025 Hey Cron · <a href="mailto:hi@heycron.com" className="hover:text-gray-600 dark:hover:text-gray-400">hi@heycron.com</a></p>
       </footer>
     </main>
   )
