@@ -1,0 +1,58 @@
+name: 每日自动发布文章
+
+on:
+  # 北京时间每天上午 9:00（UTC 01:00）自动触发
+  schedule:
+    - cron: '0 1 * * *'
+
+  # 也可以手动触发，支持自定义关键词
+  workflow_dispatch:
+    inputs:
+      keyword:
+        description: '文章关键词（留空则按当天日期自动选取）'
+        required: false
+        default: ''
+      dry_run:
+        description: '仅生成文章，不发布（true/false）'
+        required: false
+        default: 'false'
+
+jobs:
+  publish:
+    name: 生成并发布文章
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 运行自动发布脚本
+        working-directory: scripts/auto-publish
+        env:
+          SILICONFLOW_API_KEY: ${{ secrets.SILICONFLOW_API_KEY }}
+          CSDN_COOKIE:         ${{ secrets.CSDN_COOKIE }}
+          JUEJIN_COOKIE:       ${{ secrets.JUEJIN_COOKIE }}
+          SF_COOKIE:           ${{ secrets.SF_COOKIE }}
+          WECHAT_APP_ID:       ${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET:   ${{ secrets.WECHAT_APP_SECRET }}
+          WECHAT_THUMB_MEDIA_ID: ${{ secrets.WECHAT_THUMB_MEDIA_ID }}
+        run: |
+          # 构建命令参数
+          ARGS=""
+          if [ -n "${{ github.event.inputs.keyword }}" ]; then
+            ARGS="--keyword=${{ github.event.inputs.keyword }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          node index.js $ARGS
+
+      - name: 发布失败时发送通知（可选）
+        if: failure()
+        run: |
+          echo "::error::今日文章发布失败，请检查 Secrets 配置或平台 Cookie 是否过期"

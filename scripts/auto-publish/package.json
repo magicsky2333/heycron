@@ -1,0 +1,11 @@
+{
+  "name": "heycron-auto-publish",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "自动生成并发布技术文章到多个平台",
+  "scripts": {
+    "start": "node index.js",
+    "dry-run": "node index.js --dry-run",
+    "test": "node index.js --dry-run"
+  }
+}
