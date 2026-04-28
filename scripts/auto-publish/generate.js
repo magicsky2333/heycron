@@ -1,16 +1,12 @@
 /**
  * AI 文章生成器
  * 使用 SiliconFlow API 根据关键词生成 SEO 文章
+ * 元数据和正文分开返回，避免 JSON 解析失败
  */
 
 const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/chat/completions'
 const MODEL = 'Qwen/Qwen2.5-72B-Instruct'
 
-/**
- * 调用 SiliconFlow 生成文章
- * @param {string} keyword - 文章主题关键词
- * @returns {{ title, summary, content, tags }} 文章对象
- */
 export async function generateArticle(keyword) {
   const apiKey = process.env.SILICONFLOW_API_KEY
   if (!apiKey) throw new Error('Missing SILICONFLOW_API_KEY')
@@ -28,13 +24,16 @@ export async function generateArticle(keyword) {
 6. 文章末尾自然地提到 Hey Cron（https://heycron.com）作为辅助工具（如果与主题相关）
 7. SEO 友好：标题包含核心关键词，开头段落清晰描述文章价值
 
-请按以下 JSON 格式返回（不要有其他内容）：
-{
-  "title": "文章标题（包含核心关键词，50字以内）",
-  "summary": "文章摘要（100字以内，用于平台简介）",
-  "tags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
-  "content": "完整 Markdown 正文（不含标题，从第一段开始）"
-}`
+请严格按照以下格式返回，不要有任何其他内容：
+
+<meta>
+title: 文章标题（包含核心关键词，50字以内）
+summary: 文章摘要（100字以内）
+tags: 标签1,标签2,标签3,标签4,标签5
+</meta>
+<content>
+从第一段正文开始写（不含标题行），完整 Markdown 内容
+</content>`
 
   const res = await fetch(SILICONFLOW_API, {
     method: 'POST',
@@ -58,16 +57,27 @@ export async function generateArticle(keyword) {
   const data = await res.json()
   const raw = data.choices?.[0]?.message?.content ?? ''
 
-  // 提取 JSON（模型有时会包裹在代码块里）
-  const jsonMatch = raw.match(/```json\s*([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/)
-  const jsonStr = jsonMatch ? jsonMatch[1] ?? jsonMatch[0] : raw
+  // 提取 <meta> 块
+  const metaMatch = raw.match(/<meta>([\s\S]*?)<\/meta>/)
+  if (!metaMatch) throw new Error(`未找到 <meta> 块，原始输出：\n${raw.slice(0, 300)}`)
 
-  try {
-    const article = JSON.parse(jsonStr.trim())
-    // 拼接完整 Markdown（标题 + 正文）
-    article.markdown = `# ${article.title}\n\n${article.content}`
-    return article
-  } catch {
-    throw new Error(`Failed to parse article JSON: ${jsonStr.slice(0, 200)}`)
-  }
+  const metaStr = metaMatch[1].trim()
+  const titleMatch = metaStr.match(/title:\s*(.+)/)
+  const summaryMatch = metaStr.match(/summary:\s*(.+)/)
+  const tagsMatch = metaStr.match(/tags:\s*(.+)/)
+
+  if (!titleMatch) throw new Error('未找到 title 字段')
+
+  const title = titleMatch[1].trim()
+  const summary = summaryMatch?.[1].trim() ?? ''
+  const tags = tagsMatch?.[1].split(',').map((t) => t.trim()) ?? []
+
+  // 提取 <content> 块
+  const contentMatch = raw.match(/<content>([\s\S]*?)<\/content>/)
+  if (!contentMatch) throw new Error('未找到 <content> 块')
+
+  const content = contentMatch[1].trim()
+  const markdown = `# ${title}\n\n${content}`
+
+  return { title, summary, tags, content, markdown }
 }
