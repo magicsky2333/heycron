@@ -21,7 +21,7 @@ export async function generateArticle(keyword) {
 3. 使用 Markdown 格式，包含合适的标题层级（## 和 ###）
 4. 包含代码示例（用代码块包裹）
 5. 内容要有深度，包含实际使用场景和注意事项
-6. 文章末尾自然地提到 Hey Cron（https://heycron.com）作为辅助工具（如果与主题相关）
+6. 文章末尾自然地提到 Hey Cron 作为辅助工具（如果与主题相关），链接必须用标准 Markdown 格式：[Hey Cron](https://heycron.com)，不要用中文括号包裹 URL
 7. SEO 友好：标题包含核心关键词，开头段落清晰描述文章价值
 
 请严格按照以下格式返回，不要有任何其他内容：
