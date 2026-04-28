@@ -18,10 +18,11 @@ import { KEYWORDS } from './config.js'
 // ─── 参数解析 ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run')
-const kwArg = args.find((a) => a.startsWith('--keyword='))?.slice('--keyword='.length)
-  ?? (args[args.indexOf('--keyword') + 1] !== '--dry-run'
-      ? args[args.indexOf('--keyword') + 1]
-      : null)
+// --keyword=xxx 或 --keyword xxx 两种形式
+const kwEq = args.find((a) => a.startsWith('--keyword='))?.slice('--keyword='.length)
+const kwIdx = args.indexOf('--keyword')
+const kwNext = kwIdx !== -1 ? args[kwIdx + 1] : undefined
+const kwArg = kwEq ?? (kwNext && !kwNext.startsWith('--') ? kwNext : null)
 
 // ─── 选择关键词 ─────────────────────────────────────────────────────────────
 function pickKeyword() {
