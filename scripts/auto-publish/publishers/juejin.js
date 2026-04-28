@@ -6,6 +6,14 @@
 import { JUEJIN_CATEGORIES } from '../config.js'
 
 const BASE = 'https://api.juejin.cn/content_api/v1'
+const TAG_API = 'https://api.juejin.cn/tag_api/v1'
+
+// 常用标签 ID 备用表（掘金标签 ID 是固定的）
+const FALLBACK_TAG_IDS = [
+  '6809640407484334093', // Linux
+  '6809640382098505742', // 后端
+  '6809640407484667912', // 运维
+]
 
 function headers(cookie) {
   return {
@@ -17,6 +25,28 @@ function headers(cookie) {
   }
 }
 
+/**
+ * 根据标签文字搜索掘金标签 ID
+ */
+async function resolveTagIds(cookie, tags) {
+  const ids = []
+  for (const tag of tags.slice(0, 3)) {
+    try {
+      const res = await fetch(
+        `${TAG_API}/query_tag_list?key_word=${encodeURIComponent(tag)}&cursor=0&limit=5`,
+        { headers: headers(cookie) }
+      )
+      const data = await res.json()
+      const found = data.data?.[0]
+      if (found?.tag_id) ids.push(found.tag_id)
+    } catch {
+      // 忽略单个标签查找失败
+    }
+  }
+  // 至少要有 1 个标签，否则用备用
+  return ids.length > 0 ? ids : FALLBACK_TAG_IDS.slice(0, 1)
+}
+
 export async function publishToJuejin(article) {
   const cookie = process.env.JUEJIN_COOKIE
   if (!cookie) {
@@ -24,18 +54,22 @@ export async function publishToJuejin(article) {
     return null
   }
 
+  // 0. 查找标签 ID
+  const tagIds = await resolveTagIds(cookie, article.tags ?? [])
+  console.log(`[掘金] 标签 IDs: ${tagIds.join(', ')}`)
+
   // 1. 创建草稿
   const draftRes = await fetch(`${BASE}/article_draft/create`, {
     method: 'POST',
     headers: headers(cookie),
     body: JSON.stringify({
       category_id: JUEJIN_CATEGORIES.backend,
-      tag_ids: [],
+      tag_ids: tagIds,
       link_url: '',
       cover_image: '',
       title: article.title,
       brief_content: article.summary ?? '',
-      edit_type: 10,       // 10 = Markdown
+      edit_type: 10,
       html_content: 'deprecated',
       mark_content: article.markdown,
     }),
