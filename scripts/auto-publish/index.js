@@ -13,7 +13,7 @@ import { publishToCsdn } from './publishers/csdn.js'
 import { publishToJuejin } from './publishers/juejin.js'
 import { publishToSegmentFault } from './publishers/segmentfault.js'
 import { publishToWechat } from './publishers/wechat.js'
-import { KEYWORDS } from './config.js'
+import { KEYWORDS, ANGLES } from './config.js'
 
 // ─── 参数解析 ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2)
@@ -24,25 +24,29 @@ const kwIdx = args.indexOf('--keyword')
 const kwNext = kwIdx !== -1 ? args[kwIdx + 1] : undefined
 const kwArg = kwEq ?? (kwNext && !kwNext.startsWith('--') ? kwNext : null)
 
-// ─── 选择关键词 ─────────────────────────────────────────────────────────────
-function pickKeyword() {
-  if (kwArg) return kwArg
-  // 按日期循环选取，保证每天不重复
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
-  return KEYWORDS[dayOfYear % KEYWORDS.length]
+// ─── 选择关键词 + 写作角度 ──────────────────────────────────────────────────
+function pickTopic() {
+  if (kwArg) return { keyword: kwArg, angle: ANGLES[0] }
+  // 用距 2025-01-01 的总天数做索引，关键词和角度错位循环，组合数 = 75 × 8 = 600 天不重复
+  const epoch = new Date('2025-01-01').getTime()
+  const dayTotal = Math.floor((Date.now() - epoch) / 86400000)
+  const keyword = KEYWORDS[dayTotal % KEYWORDS.length]
+  const angle = ANGLES[Math.floor(dayTotal / KEYWORDS.length) % ANGLES.length]
+  return { keyword, angle }
 }
 
 // ─── 主流程 ─────────────────────────────────────────────────────────────────
 async function main() {
-  const keyword = pickKeyword()
+  const { keyword, angle } = pickTopic()
   console.log(`\n🚀 今日关键词：${keyword}`)
+  console.log(`📐 写作角度：${angle}`)
   console.log('─'.repeat(50))
 
   // 1. 生成文章
   console.log('📝 正在生成文章...')
   let article
   try {
-    article = await generateArticle(keyword)
+    article = await generateArticle(keyword, angle)
     console.log(`✅ 文章生成完成：《${article.title}》`)
     console.log(`   摘要：${article.summary}`)
     console.log(`   标签：${article.tags?.join(', ')}`)

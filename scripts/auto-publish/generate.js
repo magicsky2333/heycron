@@ -7,13 +7,14 @@
 const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/chat/completions'
 const MODEL = 'Qwen/Qwen2.5-72B-Instruct'
 
-export async function generateArticle(keyword) {
+export async function generateArticle(keyword, angle = '') {
   const apiKey = process.env.SILICONFLOW_API_KEY
   if (!apiKey) throw new Error('Missing SILICONFLOW_API_KEY')
 
-  const prompt = `你是一位专业的技术博客作者，请根据以下主题写一篇高质量的技术文章。
+  const prompt = `你是一位专业的技术博客作者，请根据以下主题和写作角度写一篇高质量的技术文章。
 
 主题：${keyword}
+写作角度：${angle || '入门教程，适合新手'}
 
 要求：
 1. 文章面向中文开发者，语言专业、简洁、易懂
