@@ -72,22 +72,31 @@ export const KEYWORDS = [
   'tmux 终端复用器使用教程',
   'vim 常用命令速查',
 
-  // 运维 / DevOps 系列
-  'CI/CD 流水线搭建实践',
-  'GitHub Actions 完整入门教程',
-  'GitLab CI 配置详解',
-  'Prometheus 监控配置教程',
-  'Grafana 可视化面板搭建',
-  'ELK 日志系统搭建',
-  'Ansible 自动化运维入门',
-  'Terraform 基础设施即代码',
-  'Linux 系统性能调优',
-  'Linux 磁盘空间清理命令',
-  'Linux 进程管理完全指南',
-  'Nginx 反向代理配置教程',
-  'SSL 证书申请与配置',
-  'Linux 防火墙 iptables 配置',
-  'SSH 免密登录配置',
+  // 定时任务 + 正则实战场景
+  '用 cron 定时备份数据库',
+  '用 cron 定时发送邮件报告',
+  '用 cron 定时清理日志文件',
+  '用 cron 定时抓取网页数据',
+  '用正则表达式清洗脏数据',
+  '用正则表达式批量重命名文件',
+  '用正则表达式提取日志关键字段',
+  '用正则表达式验证表单输入',
+  'cron 与 Webhook 结合实现自动化',
+  '定时任务 + 钉钉/企微机器人推送',
+  'Node.js 定时清理过期 token',
+  'Python 定时生成 Excel 报表',
+
+  // 开发工具系列（与 heycron 强相关）
+  'JSON 格式化与校验工具推荐',
+  'Base64 编码解码原理与应用',
+  'JWT Token 解析与安全实践',
+  'Unix 时间戳转换工具与技巧',
+  '开发者必备在线工具集合 2025',
+  'API 接口测试工具对比',
+  'Git 常用命令速查表',
+  'Shell 脚本编写定时任务',
+  'curl 命令配合 cron 定时请求',
+  'Linux crontab 与 systemd timer 对比',
 ]
 
 // 写作角度列表——同一关键词搭配不同角度产出不同文章
