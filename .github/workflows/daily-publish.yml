@@ -31,6 +31,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: 安装发布脚本依赖
+        working-directory: scripts/auto-publish
+        run: npm install
+
       - name: 运行自动发布脚本
         working-directory: scripts/auto-publish
         env:

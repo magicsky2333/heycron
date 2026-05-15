@@ -4,6 +4,7 @@
  */
 
 import crypto from 'crypto'
+import { marked } from 'marked'
 
 const API_PATH = '/blog-console-api/v3/mdeditor/saveArticle'
 const API = `https://bizapi.csdn.net${API_PATH}`
@@ -54,10 +55,13 @@ export async function publishToCsdn(article) {
     return null
   }
 
+  // Markdown 转 HTML，content 字段需要 HTML
+  const htmlContent = marked.parse(article.markdown)
+
   const body = {
     title: article.title,
     markdowncontent: article.markdown,
-    content: article.markdown,
+    content: htmlContent,
     tags: article.tags?.slice(0, 5).join(',') ?? 'cron,linux,开发工具',
     categories: '',
     type: 'original',
@@ -91,8 +95,15 @@ export async function publishToCsdn(article) {
   }
 
   // 兼容多种返回结构
-  const articleId = data.data?.article_id ?? data.data?.id ?? data.data?.ArticleId
   console.log(`[CSDN] 保存响应: ${JSON.stringify(data).slice(0, 300)}`)
+
+  // 每日限额，不算失败，跳过即可
+  if (data.msg?.includes('限制')) {
+    console.log(`[CSDN] ⏭ 今日发布已达上限，明天继续`)
+    return null
+  }
+
+  const articleId = data.data?.article_id ?? data.data?.id ?? data.data?.ArticleId
   if (!articleId) throw new Error(`CSDN 未返回 article_id，完整响应: ${JSON.stringify(data)}`)
 
   // 2. 发布（status 改为 1）
