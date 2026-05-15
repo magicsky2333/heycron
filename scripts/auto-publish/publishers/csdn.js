@@ -90,8 +90,10 @@ export async function publishToCsdn(article) {
     throw new Error(`CSDN 发布失败: ${JSON.stringify(data)}`)
   }
 
-  const articleId = data.data?.article_id
-  if (!articleId) throw new Error('CSDN 未返回 article_id')
+  // 兼容多种返回结构
+  const articleId = data.data?.article_id ?? data.data?.id ?? data.data?.ArticleId
+  console.log(`[CSDN] 保存响应: ${JSON.stringify(data).slice(0, 300)}`)
+  if (!articleId) throw new Error(`CSDN 未返回 article_id，完整响应: ${JSON.stringify(data)}`)
 
   // 2. 发布（status 改为 1）
   const pubRes = await fetch(API, {
