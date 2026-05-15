@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Nav from '@/components/Nav'
+import RelatedTools from '@/components/RelatedTools'
 import { useLang } from '@/contexts/LanguageContext'
 
 const PLATFORMS = [
@@ -350,6 +351,8 @@ export default function Home() {
       </section>
 
       {/* Footer */}
+      <RelatedTools current="/" />
+
       <footer className="border-t border-gray-200 dark:border-white/10 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
         <p>
           © 2025 Hey Cron ·{' '}

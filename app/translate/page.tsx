@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Nav from '@/components/Nav'
+import RelatedTools from '@/components/RelatedTools'
 import { useLang } from '@/contexts/LanguageContext'
 
 type Direction = 'zh2en' | 'en2zh'
@@ -153,6 +154,8 @@ export default function TranslatePage() {
           ) : (isZh ? '翻译 →' : 'Translate →')}
         </button>
       </section>
+
+      <RelatedTools current="/translate" />
 
       <footer className="border-t border-gray-200 dark:border-white/10 py-8 text-center text-gray-400 dark:text-gray-600 text-sm">
         <p>© 2025 Hey Cron · <a href="mailto:hi@heycron.com" className="hover:text-gray-600 dark:hover:text-gray-400">hi@heycron.com</a></p>
