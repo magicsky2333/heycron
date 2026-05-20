@@ -8,6 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 const TOOLS_ZH = [
   { href: '/', label: 'Cron' },
   { href: '/regex', label: 'Regex' },
+  { href: '/regex-game', label: '🎮 闯关' },
   { href: '/translate', label: '翻译' },
   { href: '/json', label: 'JSON' },
   { href: '/base64', label: 'Base64' },
@@ -19,6 +20,7 @@ const TOOLS_ZH = [
 const TOOLS_EN = [
   { href: '/', label: 'Cron' },
   { href: '/regex', label: 'Regex' },
+  { href: '/regex-game', label: '🎮 Game' },
   { href: '/translate', label: 'Translate' },
   { href: '/json', label: 'JSON' },
   { href: '/base64', label: 'Base64' },
